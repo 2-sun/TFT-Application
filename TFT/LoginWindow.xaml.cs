@@ -89,7 +89,7 @@ namespace TFT
 
                 Player player = new Player(id, pw);
 
-                new MainWindow().Show();
+                new MainWindow(player).Show();
 
                 this.Close();
 

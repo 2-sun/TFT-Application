@@ -23,5 +23,12 @@ namespace TFT
         {
             InitializeComponent();
         }
+
+        public MainWindow(Player player)
+        {
+
+            InitializeComponent();
+
+        }
     }
 }
