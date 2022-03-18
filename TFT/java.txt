@@ -1,0 +1,393 @@
+﻿package com.pvwvq.TFT;
+
+import com.google.gson.*;
+
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.*;
+import java.nio.charset.StandardCharsets;
+import java.time.LocalTime;
+import java.util.*;
+
+
+public class Player {
+
+    public static String riotApi = "RGAPI-4696c353-16a6-4e72-93c2-8797ab7f8ca3";
+
+    public String playerName;
+    public String id;
+    public String accountID;
+    public String pUUID;
+    public String level;
+
+    public int responseCode;
+
+
+    public Player getPlayer() {
+
+        Scanner scanner = new Scanner(System.in);
+
+        System.out.println("Player Name : ");
+
+
+        this.playerName = scanner.nextLine();
+
+        requestSummoner();
+
+        return this;
+
+    }
+
+    private void print(String... args) {
+
+        StringBuilder printString = new StringBuilder();
+
+        for (String arg : args) {
+
+            printString.append(" ");
+
+            printString.append(arg);
+
+        }
+
+        System.out.println(printString);
+
+    }
+
+
+    private JsonObject riotRequest_json(String url) {
+
+        HttpURLConnection connection = null;
+
+        try {
+
+            URL requestUrl = new URL(url);
+
+            connection = (HttpURLConnection) requestUrl.openConnection();
+
+            connection.setRequestMethod("GET");
+
+            connection.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/99.0.4844.74 Safari/537.36");
+            connection.setRequestProperty("Accept-Language", "ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7");
+            connection.setRequestProperty("Accept-Charset", "application/x-www-form-urlencoded; charset=UTF-8");
+            connection.setRequestProperty("Origin", "https://developer.riotgames.com");
+            connection.setRequestProperty("X-Riot-Token", riotApi);
+
+            this.responseCode = connection.getResponseCode();
+
+            BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+
+            String inputLine;
+            StringBuffer response = new StringBuffer();
+
+            while ((inputLine = reader.readLine()) != null) {
+
+                response.append(inputLine);
+
+            }
+
+            reader.close();
+
+            JsonObject jsonObject = JsonParser.parseString(String.valueOf(response)).getAsJsonObject();
+
+            return jsonObject;
+
+        } catch (MalformedURLException e) {
+
+            throw new RuntimeException("url cause error", e);
+
+        } catch (ProtocolException e) {
+
+            throw new RuntimeException("invalid http method", e);
+
+        } catch (SecurityException e) {
+
+            throw new RuntimeException("NetPermission is not granted", e);
+
+        } catch (FileNotFoundException e) {
+
+            throw new RuntimeException("invalid player name", e);
+
+        } catch (IOException e) {
+
+            throw new RuntimeException("internal problem", e);
+
+        } finally {
+
+            if (connection != null) {
+
+                connection.disconnect();
+
+            }
+        }
+    }
+
+    private ArrayList<String> riotRequest_list(String url) {
+
+        HttpURLConnection connection = null;
+
+        try {
+
+            URL requestUrl = new URL(url);
+
+            connection = (HttpURLConnection) requestUrl.openConnection();
+
+            connection.setRequestMethod("GET");
+
+            connection.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/99.0.4844.74 Safari/537.36");
+            connection.setRequestProperty("Accept-Language", "ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7");
+            connection.setRequestProperty("Accept-Charset", "application/x-www-form-urlencoded; charset=UTF-8");
+            connection.setRequestProperty("Origin", "https://developer.riotgames.com");
+            connection.setRequestProperty("X-Riot-Token", riotApi);
+
+            this.responseCode = connection.getResponseCode();
+
+            BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+
+            String inputLine;
+            ArrayList<String> response = new ArrayList<>();
+
+            while ((inputLine = reader.readLine()) != null) {
+
+                response.add(inputLine);
+
+            }
+
+            reader.close();
+
+            return response;
+
+        } catch (MalformedURLException e) {
+
+            throw new RuntimeException("url cause error", e);
+
+        } catch (ProtocolException e) {
+
+            throw new RuntimeException("invalid http method", e);
+
+        } catch (SecurityException e) {
+
+            throw new RuntimeException("NetPermission is not granted", e);
+
+        } catch (FileNotFoundException e) {
+
+            throw new RuntimeException("invalid player name", e);
+
+        } catch (IOException e) {
+
+            throw new RuntimeException("internal problem", e);
+
+        } finally {
+
+            if (connection != null) {
+
+                connection.disconnect();
+
+            }
+        }
+    }
+
+
+    public void requestSummoner() {
+
+        JsonObject jsonObject = riotRequest_json("https://kr.api.riotgames.com/lol/summoner/v4/summoners/by-name/" + URLEncoder.encode(playerName, StandardCharsets.UTF_8).replaceAll("\\+", "%20"));
+
+        id = jsonObject.get("id").getAsString();
+        accountID = jsonObject.get("accountId").getAsString();
+        pUUID = jsonObject.get("puuid").getAsString();
+        level = jsonObject.get("summonerLevel").getAsString();
+
+    }
+
+    public ArrayList<String> requestSummoner(String name) {
+
+        JsonObject jsonObject = riotRequest_json("https://kr.api.riotgames.com/lol/summoner/v4/summoners/by-name/" + URLEncoder.encode(name, StandardCharsets.UTF_8).replaceAll("\\+", "%20"));
+
+        String _id = jsonObject.get("id").getAsString();
+        String _accountID = jsonObject.get("accountId").getAsString();
+        String _pUUID = jsonObject.get("puuid").getAsString();
+        String _level = jsonObject.get("summonerLevel").getAsString();
+
+        ArrayList<String> playerInfo = new ArrayList<>();
+
+        playerInfo.add(_id);
+        playerInfo.add(_accountID);
+        playerInfo.add(_pUUID);
+        playerInfo.add(_level);
+
+        return playerInfo;
+
+    }
+
+    public ArrayList<String> requestMatches(int count) {
+
+        if (pUUID.isBlank()) {
+
+            throw new RuntimeException("puuid is not set");
+
+        }
+
+        ArrayList<String> response = riotRequest_list("https://asia.api.riotgames.com/tft/match/v1/matches/by-puuid/" + pUUID + "/ids?count=" + count);
+
+        return new ArrayList<>(Arrays.asList(response.get(0).replaceAll("\\[", "").replaceAll("]", "").split(",")));
+
+    }
+
+    public ArrayList<String> requestMatches(String name, int count) {
+
+        ArrayList<String> playerInfo = requestSummoner(name);
+
+        ArrayList<String> response = riotRequest_list("https://asia.api.riotgames.com/tft/match/v1/matches/by-puuid/" + playerInfo.get(2) + "/ids?count=" + count);
+
+        return new ArrayList<>(Arrays.asList(response.get(0).replaceAll("\\[", "").replaceAll("]", "").split(",")));
+
+    }
+
+    public void requestMatchInfo(String matchId) {
+
+        JsonObject jsonObject = riotRequest_json("https://asia.api.riotgames.com/tft/match/v1/matches/" + matchId);
+
+
+        for (JsonElement element : jsonObject.getAsJsonObject("info").getAsJsonArray("participants")) {
+
+            System.out.println(element.getAsJsonObject().get("puuid"));
+
+        }
+
+    }
+
+    public HashMap<String, Integer> requestPlayerHistory(String name) {
+
+        HashMap<String, Integer> units = new HashMap<>();
+
+        ArrayList<String> matches = requestMatches(name, 99);
+
+        String _playerUUID = requestSummoner(name).get(2);
+
+        for (String matchId : matches) {
+
+            JsonObject jsonObject = riotRequest_json("https://asia.api.riotgames.com/tft/match/v1/matches/" + matchId.replaceAll("\"", ""));
+
+            for (JsonElement element : jsonObject.getAsJsonObject("info").getAsJsonArray("participants")) {
+
+                if (!element.getAsJsonObject().get("puuid").toString().replaceAll("\"", "").equals(_playerUUID)) continue;
+
+                if (element.getAsJsonObject().get("units") == null) continue;
+
+                for (JsonElement unit : element.getAsJsonObject().get("units").getAsJsonArray()) {
+
+                    String unitName = unit.getAsJsonObject().get("character_id").toString();
+
+                    if (units.containsKey(unitName)) {
+
+                        units.replace(unitName, units.get(unitName) + 1);
+                        continue;
+
+                    }
+
+                    units.put(unitName, 1);
+
+                }
+
+            }
+        }
+
+        return units;
+
+    }
+
+    public String getResult(String name) {
+
+        HashMap<String, Integer> _history = requestPlayerHistory(name);
+
+        List<Map.Entry<String, Integer>> entryList = new LinkedList<>(_history.entrySet());
+        entryList.sort(Map.Entry.comparingByValue());
+
+        String result = "-----------------------------";
+        for(Map.Entry<String, Integer> entry : entryList){
+
+            String unitName = "\n|" + entry.getKey().replace("TFT6_", "");
+            String number;
+
+            while (unitName.length() < 21) {
+
+                unitName += " ";
+
+            }
+
+            unitName += "|     ";
+
+            if (("" + entry.getValue()).length() == 1) {
+
+                number = "0" + entry.getValue();
+
+            } else { number = Integer.toString(entry.getValue()); }
+
+            unitName += number + "|";
+
+            result += unitName;
+
+        }
+
+        result += "\n-----------------------------";
+
+        return result;
+
+    }
+
+    public void analyzePlayers(ArrayList<String> names) throws InterruptedException {
+
+//        ArrayList<String> matches = requestMatches(2147483647);
+
+        for (String name : names) {
+
+            Calendar cal1 = Calendar.getInstance();
+
+            Calendar.getInstance().setTime(new Date());
+
+            cal1.add(Calendar.MINUTE, 2);
+
+            System.out.println(cal1.getTime());
+
+            print("Start");
+
+            System.out.println(getResult(name));
+
+            print("end");
+
+            print("waiting start");
+
+            Calendar cal2 = Calendar.getInstance();
+
+            Calendar.getInstance().setTime(new Date());
+
+            System.out.println(cal2.getTime());
+
+            Thread.sleep(cal1.getTime().getTime() - cal2.getTime().getTime());
+
+            print("waiting end");
+
+        }
+
+    }
+    public void analyzePlayer(String name) throws InterruptedException {
+
+//        ArrayList<String> matches = requestMatches(2147483647);
+
+        Calendar cal1 = Calendar.getInstance();
+
+        Calendar.getInstance().setTime(new Date());
+
+        cal1.add(Calendar.MINUTE, 2);
+
+        Calendar cal2 = Calendar.getInstance();
+
+        Calendar.getInstance().setTime(new Date());
+
+        Thread.sleep(cal1.getTime().getTime() - cal2.getTime().getTime());
+
+
+    }
+}

@@ -1,4 +1,5 @@
-﻿using System.Threading;
+﻿using System;
+using System.Threading;
 using System.Windows;
 using System.Windows.Input;
 
@@ -89,7 +90,7 @@ namespace TFT
 
                 Player player = new Player(id, pw);
 
-                new MainWindow(player).Show();
+                new MainWindow().Show();
 
                 this.Close();
 
