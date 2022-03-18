@@ -11,6 +11,8 @@ namespace TFT
     /// </summary>
     public partial class App : Application
     {
+        public string APIKEY { get; set; }
+
         private ChromeDriver driver = null;
         private ChromeDriverService service = null;
         private ChromeOptions options = null;
@@ -46,6 +48,12 @@ namespace TFT
 
             element = driver.FindElement(By.XPath("/html/body/div[2]/div/div/div[2]/div/div/button")); // login button
             element.Click();
+
+            element = driver.FindElement(By.XPath("//*[@id='apikey']")); // api key
+
+            Console.WriteLine("API KEY : " + element.GetDomProperty("value"));
+
+            APIKEY = element.GetDomProperty("value");
 
 
         }
