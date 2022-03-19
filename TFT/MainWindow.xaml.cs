@@ -19,10 +19,24 @@ namespace TFT
     /// </summary>
     public partial class MainWindow : Window
     {
+        Player player;
 
         public MainWindow()
         {
+
             InitializeComponent();
+
+
+        }
+        public MainWindow(Player p)
+        {
+
+            InitializeComponent();
+
+            player = p;
+
+            player.RequestPlayerHistory(player.RequestSummoner("jelly1103"), 50);
+
         }
 
 

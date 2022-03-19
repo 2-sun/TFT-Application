@@ -90,19 +90,19 @@ namespace TFT
 
                 Player player = new Player(id, pw);
 
-                new MainWindow().Show();
+                new MainWindow(player).Show();
 
                 this.Close();
 
                 logining = false;
 
             }
-            catch (PlayerException)
+            catch (PlayerException e)
             {
 
                 if (MessageBox.Show("invalid id/pw\ncheck it and try again ", "Error", MessageBoxButton.OK, MessageBoxImage.Error) == MessageBoxResult.OK)
                 {
-
+                    Console.WriteLine(e.ToString());
                     logining = false;
 
                 }

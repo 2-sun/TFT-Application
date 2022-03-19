@@ -2,6 +2,8 @@
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Web;
@@ -40,7 +42,7 @@ namespace TFT
             try
             {
 
-                element = driver.FindElement(By.XPath("/html/body/div[2]/div/div/div[2]/div/div/div[2]/div/div/div/span")); // login button
+                element = driver.FindElement(By.XPath("/html/body/div[2]/div/div/div[2]/div/div/div[2]/div/div/div/span")); // login error
 
                 driver.Dispose();
 
@@ -117,17 +119,86 @@ namespace TFT
         {
             PSession result = new PSession();
 
-            HttpWebResponse? response = null;
+            JObject json = JObject.Parse(ResponseToString(RequestRiot("https://kr.api.riotgames.com/lol/summoner/v4/summoners/by-name/" + HttpUtility.UrlEncode(name).Replace("+", "%20"))));
+
+
+            result.playerName = json["name"].ToString();
+            result.id = json["id"].ToString();
+            result.accountID = json["accountId"].ToString();
+            result.pUUID = json["puuid"].ToString();
+            result.iconID = Int32.Parse(json["profileIconId"].ToString());
+            result.revisionDate = Int64.Parse(json["revisionDate"].ToString());
+            result.level = Int32.Parse(json["summonerLevel"].ToString());
+
+            return result;
+
+        }
+
+        public Dictionary<string, int> RequestPlayerHistory(PSession session, int count)
+        {
+
+            if (!session.CheckEmpty())
+            {
+
+                throw new PlayerException("player session is not set");
+
+            }
+
+            Dictionary<string, int> result = new Dictionary<string, int>();
+
+            String matchIds = ResponseToString(RequestRiot("https://asia.api.riotgames.com/tft/match/v1/matches/by-puuid/" + session.pUUID + "/ids?count=" + count));
+
+            foreach (var matchId in matchIds.Replace("[", "").Replace("]", "").Replace("\"", "").Split(","))
+            {
+
+                JObject jobject = JObject.Parse(ResponseToString(RequestRiot("https://asia.api.riotgames.com/tft/match/v1/matches/" + matchId)));
+
+                foreach (var participant in jobject["info"]["participants"].Children())
+                {
+
+                    JObject participantJson = JObject.Parse(participant.ToString());
+
+                    if (session.pUUID != participantJson["puuid"].ToString()) continue;
+
+                    if (participantJson["units"] == null) continue;
+
+                    foreach (var unit in participantJson["units"].Children())
+                    {
+
+                        string unitName = unit["character_id"].ToString();
+
+                        if (result.ContainsKey(unitName))
+                        {
+
+                            result[unitName] += UnitCount(unit.ToString());
+                            continue;
+
+                        }
+
+                        result.Add(unitName, UnitCount(unit.ToString()));
+
+                    }
+
+                }
+
+
+
+            }
+
+            return result;
+        }
+
+        private string ResponseToString(HttpWebResponse response)
+        {
 
             Stream? stream = null;
 
             StreamReader? reader = null;
 
             string? responseString = null;
+
             try
             {
-
-                response = RequestRiot("https://kr.api.riotgames.com/lol/summoner/v4/summoners/by-name/" + HttpUtility.UrlEncode(name).Replace("+", "%20"));
 
                 stream = response.GetResponseStream();
 
@@ -151,19 +222,51 @@ namespace TFT
 
             }
 
-            JObject json = JObject.Parse(responseString);
+            return responseString;
 
+        }
 
-            result.playerName = json["name"].ToString();
-            result.id = json["id"].ToString();
-            result.accountID = json["accountId"].ToString();
-            result.pUUID = json["puuid"].ToString();
-            result.iconID = Int32.Parse(json["profileIconId"].ToString());
-            result.revisionDate = Int64.Parse(json["revisionDate"].ToString());
-            result.level = Int32.Parse(json["summonerLevel"].ToString());
+        private int UnitCount(string unit)
+        {
+            int count = 0;
 
-            return result;
+            JObject unitJson = JObject.Parse(unit);
 
+            int tier = Int32.Parse(unitJson["tier"].ToString());
+
+            switch (tier) 
+            {
+
+                case 1:
+
+                    count += 1;
+
+                    break;
+
+                case 2:
+
+                    count += 3;
+
+                    break;
+
+                case 3:
+
+                    count += 9;
+
+                    break;
+
+            }
+
+            foreach (var i in unitJson["items"].Children())
+            {
+
+                count++;
+
+            }
+
+            return count;
+
+            
         }
 
     }
